@@ -11,8 +11,12 @@ public class InMemoryBookingService implements BookingApi {
     private long nextId = 1;
 
     @Override
-    public Booking createBooking(String roomId, long startMinute, long endMinute,
-                                 String waitlistKey) {
+    public Booking createBooking(BookingRequest request) {
+        String roomId = request.roomId();
+        long startMinute = request.startMinute();
+        long endMinute = request.endMinute();
+        String waitlistKey = request.waitlistKey();
+
         if (roomId == null) {
             throw new IllegalArgumentException("roomId must not be null");
         }
@@ -28,7 +32,7 @@ public class InMemoryBookingService implements BookingApi {
 
         BookingStatus status = conflict ? BookingStatus.WAITLISTED : BookingStatus.CONFIRMED;
         Booking booking = new Booking(nextId++, roomId, startMinute, endMinute,
-                status, waitlistKey);
+                status, waitlistKey, request.notes());
         bookings.add(booking);
         return booking;
     }

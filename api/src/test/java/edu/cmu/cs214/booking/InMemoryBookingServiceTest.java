@@ -14,7 +14,7 @@ class InMemoryBookingServiceTest {
 
     @Test
     void freeRoomGivesConfirmedBooking() {
-        Booking booking = api.createBooking("R1", 540, 600, null);
+        Booking booking = api.createBooking(request("R1", 540, 600, null));
 
         assertEquals(BookingStatus.CONFIRMED, booking.getStatus());
         assertEquals(540, booking.getStartMinute());
@@ -22,17 +22,17 @@ class InMemoryBookingServiceTest {
 
     @Test
     void conflictWithoutKeyReturnsNull() {
-        api.createBooking("R1", 540, 600, null);
+        api.createBooking(request("R1", 540, 600, null));
 
-        assertNull(api.createBooking("R1", 570, 630, null));
+        assertNull(api.createBooking(request("R1", 570, 630, null)));
         assertEquals(1, api.listBookings("R1").size());
     }
 
     @Test
     void conflictWithKeyGoesOnWaitlist() {
-        api.createBooking("R1", 540, 600, null);
+        api.createBooking(request("R1", 540, 600, null));
 
-        Booking queued = api.createBooking("R1", 570, 630, "party-of-four");
+        Booking queued = api.createBooking(request("R1", 570, 630, "party-of-four"));
 
         assertEquals(BookingStatus.WAITLISTED, queued.getStatus());
         assertEquals("party-of-four", queued.getWaitlistKey());
@@ -40,17 +40,17 @@ class InMemoryBookingServiceTest {
 
     @Test
     void touchingRangesDoNotConflict() {
-        api.createBooking("R1", 540, 600, null);
+        api.createBooking(request("R1", 540, 600, null));
 
-        Booking next = api.createBooking("R1", 600, 660, null);
+        Booking next = api.createBooking(request("R1", 600, 660, null));
 
         assertEquals(BookingStatus.CONFIRMED, next.getStatus());
     }
 
     @Test
     void cancelWithNotifyPromotesTheWaitlistedBooking() {
-        Booking held = api.createBooking("R1", 540, 600, null);
-        Booking queued = api.createBooking("R1", 570, 630, "party-of-four");
+        Booking held = api.createBooking(request("R1", 540, 600, null));
+        Booking queued = api.createBooking(request("R1", 570, 630, "party-of-four"));
 
         assertTrue(api.cancelBooking(held.getId(), true));
 
@@ -58,5 +58,10 @@ class InMemoryBookingServiceTest {
         List<Booking> schedule = api.listBookings("R1");
         assertEquals(1, schedule.size());
         assertEquals(queued.getId(), schedule.get(0).getId());
+    }
+
+    private static BookingRequest request(String roomId, long startMinute,
+                                          long endMinute, String waitlistKey) {
+        return new BookingRequest(roomId, startMinute, endMinute, waitlistKey, null);
     }
 }
